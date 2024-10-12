@@ -1,14 +1,9 @@
 ﻿using MertCord_Client.Services;
-using System.Net.Sockets;
-using System.Text;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.StartPanel;
 
 namespace MertCord_Client.Forms
 {
     public partial class ChatForm : Form
     {
-        private TcpClient client;
-        private NetworkStream stream;
         private string _userName;
 
         public ChatForm(string userName) => Init(userName);
@@ -17,46 +12,21 @@ namespace MertCord_Client.Forms
             InitializeComponent();
             _userName = userName;
             lblUsername.Text = $"Logged in as: {userName}";
+            Task.Run(() => APIGateway.Instance().TCPConnect());
         }
-        private void btnConnect_Click(object sender, EventArgs e)
-        {
-            client = new TcpClient(Environment.GetEnvironmentVariable("SERVER_URL")!, 5000);
-            stream = client.GetStream();
-
-            new Thread(ReceiveMessages).Start();
-        }
-
         private void btnSend_Click(object sender, EventArgs e)
         {
-            string message = $"{_userName}: {txtMessage.Text}";
-            byte[] buffer = Encoding.ASCII.GetBytes(message);
-            stream.Write(buffer, 0, buffer.Length);
-            txtMessage.Clear();
-        }
-
-        private void ReceiveMessages()
-        {
-            byte[] buffer = new byte[1024];
-            int bytesRead;
-
-            while ((bytesRead = stream.Read(buffer, 0, buffer.Length)) != 0)
+            if (!string.IsNullOrEmpty(txtMessage.Text))
             {
-                string message = Encoding.ASCII.GetString(buffer, 0, bytesRead);
-                Invoke(new Action(() => lstMessages.Items.Add(message)));
+                APIGateway.Instance().TCPSendMessage(_userName, txtMessage.Text);
+                txtMessage.Clear();
             }
         }
-
+        private void txtMessage_KeyPress(object sender, KeyPressEventArgs e) => btnSend.PerformClick();
         private void btnVoiceChat_Click(object sender, EventArgs e)
         {
             VoiceChatForm voiceChatForm = new VoiceChatForm();
             voiceChatForm.Show();
         }
-
-        private void ChatForm_Load(object sender, EventArgs e)
-        {
-
-        }
-
-        private void txtMessage_KeyPress(object sender, KeyPressEventArgs e) => btnSend.PerformClick();
     }
 }

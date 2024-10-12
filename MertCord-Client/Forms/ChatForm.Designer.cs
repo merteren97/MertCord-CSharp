@@ -86,7 +86,6 @@
             Controls.Add(btnSend);
             Name = "ChatForm";
             Text = "Chat Client";
-            Load += ChatForm_Load;
             ResumeLayout(false);
             PerformLayout();
         }

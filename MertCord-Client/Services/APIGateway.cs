@@ -5,6 +5,13 @@ namespace MertCord_Client.Services
 {
     public class APIGateway : SingletonManager<APIGateway>
     {
+        #region TCP Service
+
+        public async Task TCPConnect() => TCP_Service.Instance().ConnectToServerAsync();
+        public async Task TCPSendMessage(string userName, string message) => TCP_Service.Instance().SendMessageToServerAsync(userName, message);
+
+        #endregion
+
         #region Chat_TBL Service
 
         public void ChatDelete(int id) => Chat_TBL_Service.Instance().Delete(id);

@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using DotNetEnv;
+using MertCord_Client.Models.DB;
 using System.Net.Sockets;
 using System.Text;
 
@@ -9,53 +10,43 @@ namespace MertCord_Client.Services
         private TcpClient client;
         private NetworkStream stream;
         public event Action NewMessageReceived; // Yeni mesaj bildirimi aldığında tetiklenecek event
+        public bool isListening;
 
-        public async Task ConnectToServerAsync(CancellationToken token)
+        public async Task ConnectToServerAsync()
         {
             client = new TcpClient();
-            await client.ConnectAsync("127.0.0.1", 5000);
+            await client.ConnectAsync(Env.GetString("SERVER_URL"), Env.GetInt("SERVER_PORT"));
             stream = client.GetStream();
-            Console.WriteLine("Connected to server.");
-
-            ListenForNotificationsAsync(token); // Bildirimleri dinlemeyi asenkron başlat
+            isListening = true;
+            ListenForNotificationsAsync(); // Bildirimleri dinlemeyi asenkron başlat
         }
-
-        public async Task SendMessageToServerAsync(string message)
+        public async Task SendMessageToServerAsync(string userName, string message)
         {
             // Mesajı veritabanına kaydet
-            await SaveMessageToDatabaseAsync(message);
+            APIGateway.Instance().ChatInsert(new Chat_TBL { UserName = userName, Message = message });
 
             // Server'a "NEW_MESSAGE" sinyali gönder
-            byte[] buffer = Encoding.ASCII.GetBytes("NEW_MESSAGE");
+            byte[] buffer = Encoding.ASCII.GetBytes(Env.GetString("TOKEN") + "_" + "NEW_MESSAGE");
             await stream.WriteAsync(buffer, 0, buffer.Length); // Asenkron yazma
         }
-
-        private async Task ListenForNotificationsAsync(CancellationToken token)
+        private async Task ListenForNotificationsAsync()
         {
             byte[] buffer = new byte[1024];
-
-            while (!token.IsCancellationRequested && client.Connected)
+            while (isListening && client.Connected)
             {
-                int byteCount = await stream.ReadAsync(buffer, 0, buffer.Length, token);
-
+                int byteCount = await stream.ReadAsync(buffer, 0, buffer.Length);
                 if (byteCount == 0) // Bağlantı kapatıldı
                     break;
 
                 string data = Encoding.ASCII.GetString(buffer, 0, byteCount);
-                if (data == "NEW_MESSAGE_NOTIFICATION")
+                if (data == "NEW_MESSAGE")
                 {
-                    Console.WriteLine("New message notification received.");
                     OnNewMessageReceived(); // Event'i tetikle
                 }
             }
 
             client.Close(); // Client bağlantısı kapatıldı
         }
-
-        public void OnNewMessageReceived()
-        {
-            NewMessageReceived?.Invoke();
-            FetchMessagesFromDatabase(); // Yeni mesajları veritabanından çek
-        }
+        public void OnNewMessageReceived() => NewMessageReceived?.Invoke();
     }
 }
