@@ -1,32 +1,23 @@
-﻿using MertCord_Client.Forms;
-using MertCord_Client.Services;
+﻿using MertCord_Client.Services;
 using System.Net.Sockets;
 using System.Text;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.StartPanel;
 
-namespace MertCord_Client
+namespace MertCord_Client.Forms
 {
     public partial class ChatForm : Form
     {
         private TcpClient client;
         private NetworkStream stream;
-        private string username;
+        private string _userName;
 
-        public ChatForm()
+        public ChatForm(string userName) => Init(userName);
+        private void Init(string userName)
         {
             InitializeComponent();
-            LoadUsernameOrAsk();
+            _userName = userName;
+            lblUsername.Text = $"Logged in as: {userName}";
         }
-
-        private void LoadUsernameOrAsk()
-        {
-            if (APIGateway.Instance().Username_Get() == null)
-            {
-                username = Prompt.ShowDialog("Enter your username:", "Username");
-                APIGateway.Instance().Username_Set(username);
-            }
-            lblUsername.Text = $"Logged in as: {username}";
-        }
-
         private void btnConnect_Click(object sender, EventArgs e)
         {
             client = new TcpClient(Environment.GetEnvironmentVariable("SERVER_URL")!, 5000);
@@ -37,7 +28,7 @@ namespace MertCord_Client
 
         private void btnSend_Click(object sender, EventArgs e)
         {
-            string message = $"{username}: {txtMessage.Text}";
+            string message = $"{_userName}: {txtMessage.Text}";
             byte[] buffer = Encoding.ASCII.GetBytes(message);
             stream.Write(buffer, 0, buffer.Length);
             txtMessage.Clear();

@@ -1,4 +1,4 @@
-using MertCord_Client;
+using MertCord_Client.Forms;
 
 namespace MertCord_Client
 {
@@ -13,7 +13,7 @@ namespace MertCord_Client
             // To customize application configuration such as set high DPI settings or default font,
             // see https://aka.ms/applicationconfiguration.
             ApplicationConfiguration.Initialize();
-            Application.Run(new ChatForm());
+            Application.Run(new Login());
         }
     }
 }
