@@ -1,0 +1,6 @@
+﻿# Çalıştırılabilir dosyalar ve build klasörleri
+bin/
+obj/
+
+# Çevresel değişken dosyası
+.env
